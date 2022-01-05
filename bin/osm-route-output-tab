@@ -24,7 +24,8 @@ sys.stdout.write(head.format(id="Relation ID", route_network="Network", route_re
 
 class SortedDisplayDict(dict):
    def __str__(self):
-       return ", ".join("{} ({})".format(key, self[key]) for key in sorted(self))
+#       return ", ".join("{} ({})".format(key, self[key]) for key in sorted(self))
+       return ", ".join("{}".format(key) for key in sorted(self))
 
 unpacker = msgpack.Unpacker(sys.stdin.buffer, use_list=True, encoding='utf-8')
 for route in unpacker:
