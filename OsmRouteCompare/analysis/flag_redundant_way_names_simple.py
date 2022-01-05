@@ -43,8 +43,8 @@ class FlagRedundantWayNamesSimple(object):
             yield(route)
 
     def name_is_redundant(self, way_name, route_name, route_ref):
-        if way_name == route_name:
-            return True
+        # if way_name == route_name:
+        #     return True
 
         if way_name == route_ref:
             return True
