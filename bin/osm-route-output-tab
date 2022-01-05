@@ -1,0 +1,68 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+import os
+import sys
+
+# Add our parent folder to our path
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
+import msgpack
+import argparse
+
+parser = argparse.ArgumentParser(description='Output a tab-delimited file listing results.')
+parser.add_argument('--pad-columns', action='store_true', help='Pad columns to fixed width for readability.')
+args = parser.parse_args()
+
+if args.pad_columns:
+    head = "{id:10s}\t{route_network:10s}\t{route_ref:5s}\t{route_name:15s}\t{num_ways:10s}\t{num_redundant:10s}\t{num_not_redundant:10s}\t{redundant_names:60s}\t{not_redundant_names:60s}\n"
+    line = "{id:10d}\t{route_network:10s}\t{route_ref:5s}\t{route_name:15s}\t{num_ways:10d}\t{num_redundant:10d}\t{num_not_redundant:10d}\t{redundant_names:60s}\t{not_redundant_names:60s}\n"
+else:
+    head = "{id:s}\t{route_network:s}\t{route_ref:s}\t{route_name:s}\t{num_ways:s}\t{num_redundant:s}\t{num_not_redundant:s}\t{redundant_names:s}\t{not_redundant_names:s}\n"
+    line = "{id:d}\t{route_network:s}\t{route_ref:s}\t{route_name:s}\t{num_ways:d}\t{num_redundant:d}\t{num_not_redundant:d}\t{redundant_names:s}\t{not_redundant_names:s}\n"
+sys.stdout.write(head.format(id="Relation ID", route_network="Network", route_ref="Ref", route_name="Route Name", num_ways="Ways", num_redundant="Redundant", num_not_redundant="Not Redundant", redundant_names="Redundant Names", not_redundant_names="Not-Redundant Names"))
+
+class SortedDisplayDict(dict):
+   def __str__(self):
+       return ", ".join("{} ({})".format(key, self[key]) for key in sorted(self))
+
+unpacker = msgpack.Unpacker(sys.stdin.buffer, use_list=True, encoding='utf-8')
+for route in unpacker:
+    id = route['id']
+    route_network = ''
+    if 'network' in route['tags']:
+        route_network = route['tags']['network']
+    route_ref = ''
+    if 'ref' in route['tags']:
+        route_ref = route['tags']['ref']
+    route_name = ''
+    if 'name' in route['tags']:
+
+        route_name = route['tags']['name']
+    num_ways = 0
+    num_redundant = 0
+    num_not_redundant = 0
+    redundant_names = {}
+    not_redundant_names = {}
+
+    for way in route['ways']:
+        num_ways = num_ways + 1
+        if 'name_is_redundant' in way:
+            if way['name_is_redundant'] == True:
+                num_redundant = num_redundant + 1
+                if 'name' in way['tags']:
+                    if way['tags']['name'] in redundant_names:
+                        redundant_names[way['tags']['name']] = redundant_names[way['tags']['name']] + 1
+                    else:
+                        redundant_names[way['tags']['name']] = 1
+            else:
+                num_not_redundant = num_not_redundant + 1
+                if 'name' in way['tags']:
+                    if way['tags']['name'] in not_redundant_names:
+                        not_redundant_names[way['tags']['name']] = not_redundant_names[way['tags']['name']] + 1
+                    else:
+                        not_redundant_names[way['tags']['name']] = 1
+
+    sys.stdout.write(line.format(id=id, route_network=route_network, route_ref=route_ref, route_name=route_name, num_ways=num_ways, num_redundant=num_redundant, num_not_redundant=num_not_redundant, redundant_names=str(SortedDisplayDict(redundant_names)), not_redundant_names=str(SortedDisplayDict(not_redundant_names))))
+
+sys.stdout.write("\n")

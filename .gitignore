@@ -1,0 +1,10 @@
+*.kml
+*.kmz
+*.osm
+*.pbf
+*.bz2
+*.pyc
+images/*
+kml/*
+*.msgpack
+.cache
